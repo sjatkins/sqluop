@@ -79,6 +79,18 @@ def generate_table_from_pydantic(model, base):
 
 # Create the SQLAlchemy table dynamically
 PersonTable = generate_table_from_pydantic(Person, Base)
+def generate_table_from_pydantic(model, base):
+    class Table(base):
+        __tablename__ = model.__name__.lower()
+        id = Column(Integer, primary_key=True)
+
+    # Add columns to the dynamically generated table
+    for field_name, field_type in model.__annotations__.items():
+        if field_name != 'id':
+            setattr(Table, field_name, Column(field_type))
+
+    return Table
+
 
 # Create a database engine and table
 engine = create_engine('sqlite:///person_table.db', echo=True)
