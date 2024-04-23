@@ -44,6 +44,7 @@ def generate_table_from_pydantic(model, base, table_name=''):
     #    __tablename__ = table_name or model.__name__.lower()
     #    id = Column(String, primary_key=True)
 
+
     if not table_name:
         table_name = model.__name__.lower()
     args = dict(
