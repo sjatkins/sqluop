@@ -11,6 +11,7 @@ So in SQLAlchemy we need a object that at least
 - has knowledge of schema (pydantic or class via attributes) for some serialization needs?
 ** Transaction Handling
 In reference Mongo implementation we have overall transaction created with beginTransaction or immediate mode.  The same needs to be avaliable in SQLAlchemy Database subclass.
+Actually that isn't correct.  Transaction is already and always abstracted in UOP.  The abstraction is that changes are only in changeset until changeset is applied to database. That is either delayed in case of long explicit transaction or immediate.  So all the detail is in apply_to_database for any type of database.  
 see https://docs.sqlalchemy.org/en/20/core/connections.html#dbapi-autocommit
 https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html#committing-changes
 *** TODO understand BEGIN IMPLICT and where it applies
@@ -47,6 +48,12 @@ with engine.connect() as conn:
 The fundamental transactional / database interactive object when using the ORM is called the Session. In modern SQLAlchemy, this object is used in a manner very similar to that of the Connection, and in fact as the Session is used, it refers to a Connection internally which it uses to emit SQL.
 #+end_quote
 
+Session object itself tracks new and modified objects.  This may or may not be a problem.
+*** TODO ascertain whether SQLAlchemy ORM gets in the way or not
+At the least how we clean up when writing changeset to database.
+For instance an extra query on object modified in changeset would be in Session.dirty and refetch would first autoflush changes.  This could potentially lead to inconsistencies.
+
+It might be that using raw connection is better for our UOP transaction patterns or at least guaranteed to be consistent. 
 ** Metadata
 ** Operations
 *** insert
