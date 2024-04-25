@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/sqluop.iml" filepath="$PROJECT_DIR$/.idea/sqluop.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../cw/uop/.idea/uop.iml" filepath="$PROJECT_DIR$/../cw/uop/.idea/uop.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../cw/uopmeta/.idea/uopmeta.iml" filepath="$PROJECT_DIR$/../cw/uopmeta/.idea/uopmeta.iml" />
     </modules>
   </component>
 </project>

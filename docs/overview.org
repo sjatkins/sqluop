@@ -1,6 +1,31 @@
 * Doc Links
 *** https://docs.sqlalchemy.org/en/20/tutorial/
 * Basics
+** Schema and other declarartive aspects
+Unlike in a NoSQL database creating collections/tables in SQL database requires metadata of the schema of the collections/tables and this metadata be applied to the database.
+
+This means that collection creation must include schema related information for SQL databases.
+
+In UOP there are three types of collections.
+
+in UOP the heart of getting or setting up a UOP collection is get_managed_collection.
+
+** Tasks
+*** TODO Create get_managed_collection that does right thing for SQL
+*** TODO set up to_database, from_database
+Goes between standard internal dict form and what is appropriate to type of database
+Get operations from database must go through from_database and write operations to database must go through to_database.  Ideally all write operations are restricted to apply a changeset to a database.
+
+It is possible that a large part of to_database is whether to jsonify collection structure such as lists and dicts.  Whethere to jsonify is a property of tghe type of database in use. 
+
+**** TODO test these conversions against all existing types
+
+** Meta Collections
+These describe the database itself plus Queries.  These are described as far as schema by the corresponding pydantic classes. 
+** Instance Collections
+Each of these contains the instances of a Class.  These are thus described by the attributes of that class.
+** Miscellaneous Housekeeping
+These include collections such as User, Tenant, Schemas.  They could be included in Meta
 ** BDCollection superclass considerations
 *** _coll
 In document orient database such as mongodb the collection object
