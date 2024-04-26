@@ -1,6 +1,6 @@
 from uop import db_collection as db_coll, database
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Date, DateTime, Double, Integer, Boolean,  String, Text, Float, JSON
+from sqlalchemy import inspect, create_engine, Column, Date, DateTime, Double, Integer, Boolean,  String, Text, Float, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -104,4 +104,9 @@ class AlchemyDatabase(database.Database):
     def get_connection_string(self, db_brand, dbcredentials):
         default = f'{db_brand}://{self._db_name}'
         return default
+
+    def get_tables(self):
+        metadata = Base.metadata
+        metadata.reflect(self._engine)
+
 
