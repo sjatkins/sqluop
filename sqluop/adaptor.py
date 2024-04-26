@@ -95,7 +95,13 @@ class AlchemyCollection(db_coll.DBCollection):
 
 
 class AlchemyDatabase(database.Database):
-    def __init__(self, index=None, collections=None,
+    def __init__(self, db_name, index=None, collections=None, db_brand='sqlite',
                  tenancy='no_tenants', **dbcredentials):
-        pass
+        self._db_name = db_name
+        self._connection_string = self.get_connection_string(db_brand, dbcredentials)
+        self._engine = create_engine(self._connection_string)
+
+    def get_connection_string(self, db_brand, dbcredentials):
+        default = f'{db_brand}://{self._db_name}'
+        return default
 
