@@ -1,6 +1,8 @@
 from uop import db_collection as db_coll, database
 from pydantic import BaseModel
-from sqlalchemy import inspect, PrimaryKeyConstraint, Column, Date, DateTime, Double, Integer, Boolean,  String, Text, Float, JSON
+from sqlalchemy import (inspect, PrimaryKeyConstraint, Column, Date,
+                        DateTime, Double, Integer, Boolean,  String,
+                        Text, Float, JSON, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -49,48 +51,29 @@ def pks_and_columns(model):
         field_type = field_info.type_
         sql_type = column_type(field_type)
         columns[field_name] = Column(sql_type)
+        keys.append(field_name)
     return keys, columns
+
+def make_table(base, table_name, columns, keys):
+    return type(table_name, (base,), dict(
+        __tablename__ = table_name,
+        __table_args = (PrimaryKeyConstraint(*keys), {}),
+        **columns))
+
 
 def table_from_pydantic(model, base, table_name=''):
     if not table_name:
         table_name = model.__name__.lower()
     primary_keys, columns = pks_and_columns(model)
-    args = dict(
-        __tablename__ = table_name,
-        __table_args__ = (PrimaryKeyConstraint(*primary_keys),{}),
-        **columns
-    )
-    return type(table_name, (base,), args)
+    return make_table(base, table_name, columns, primary_keys)
 
 
-def generate_table_from_pydantic(model, base, table_name=''):
-    #
-    #    __tablename__ = table_name or model.__name__.lower()
-    #    id = Column(String, primary_key=True)
-
-
-
-
-
-
-
-    if not table_name:
-        table_name = model.__name__.lower()
-    args = dict(
-        __tablename__ = table_name,
-        id = Column(String, primary_key=True)
-    )
-    table = type(table_name, (base,), args)
-
-
-    # Add columns to the dynamically generated table
-    for field_name, field_info in model.__fields__.items():
-        field_type = field_info.type_
-        if field_name != 'id':
-            sql_type = column_type(field_type)
-            setattr(table, field_name, Column(sql_type))
-
-    return table
+def table_from_attrs(attrs, base, table_name):
+    columns = {}
+    for attr in attrs:
+        sql_type = column_type(attr.type)
+        columns[attr.name] = Column(sql_type)
+    return make_table(base, table_name, columns, ('id',))
 
 
 class AlchemyCollection(db_coll.DBCollection):
@@ -98,13 +81,13 @@ class AlchemyCollection(db_coll.DBCollection):
         # TODO consider preprocessed statements
         self._table_name = table_name
         self._table = self.ensure_table(schema)
-        super().__init__(self._table, indexed, tenant_modifier, *constraints)
+        super().__init__(self._table, indexed=indexed, tenant_modifier=tenant_modifier, *constraints)
 
     def get_existing_table(self):
         pass
 
     def ensure_pydantic_table(self, schema):
-        return generate_table_from_pydantic(schema, Base)
+        return table_from_pydantic(schema, Base, self._table_name)
 
     def ensure_instance_table(self, existing, schema):
         pass
