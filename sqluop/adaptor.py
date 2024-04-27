@@ -1,6 +1,6 @@
 from uop import db_collection as db_coll, database
 from pydantic import BaseModel
-from sqlalchemy import inspect, create_engine, Column, Date, DateTime, Double, Integer, Boolean,  String, Text, Float, JSON
+from sqlalchemy import inspect, PrimaryKeyConstraint, Column, Date, DateTime, Double, Integer, Boolean,  String, Text, Float, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -39,10 +39,39 @@ def column_type(pydantic_type):
     return JSON
 
 Base = declarative_base()
+
+
+def pks_and_columns(model):
+    fields = model.__fields__
+    keys = ['id'] if 'id' in fields else []
+    columns = {}
+    for field_name, field_info in model.__fields__.items():
+        field_type = field_info.type_
+        sql_type = column_type(field_type)
+        columns[field_name] = Column(sql_type)
+    return keys, columns
+
+def table_from_pydantic(model, base, table_name=''):
+    if not table_name:
+        table_name = model.__name__.lower()
+    primary_keys, columns = pks_and_columns(model)
+    args = dict(
+        __tablename__ = table_name,
+        __table_args__ = (PrimaryKeyConstraint(*primary_keys),{}),
+        **columns
+    )
+    return type(table_name, (base,), args)
+
+
 def generate_table_from_pydantic(model, base, table_name=''):
     #
     #    __tablename__ = table_name or model.__name__.lower()
     #    id = Column(String, primary_key=True)
+
+
+
+
+
 
 
     if not table_name:
@@ -100,13 +129,16 @@ class AlchemyDatabase(database.Database):
         self._db_name = db_name
         self._connection_string = self.get_connection_string(db_brand, dbcredentials)
         self._engine = create_engine(self._connection_string)
+        self._tables = self.get_tables()
 
     def get_connection_string(self, db_brand, dbcredentials):
-        default = f'{db_brand}://{self._db_name}'
+        default = f'{db_brand}:///{self._db_name}'
         return default
 
     def get_tables(self):
         metadata = Base.metadata
         metadata.reflect(self._engine)
+        return metadata.tables
+
 
 
