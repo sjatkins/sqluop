@@ -4,6 +4,7 @@ from sqlalchemy import (inspect, PrimaryKeyConstraint, Column, Date,
                         DateTime, Double, Integer, Boolean,  String,
                         Text, Float, JSON, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
+from uopmeta.schemas import meta
 from sqlalchemy.orm import sessionmaker
 
 python_sql = dict(
@@ -77,14 +78,12 @@ def table_from_attrs(attrs, base, table_name):
 
 
 class AlchemyCollection(db_coll.DBCollection):
-    def __init__(self, table_name, schema, indexed=False, tenant_modifier=None, *constraints):
+    def __init__(self, table, schema, indexed=False, tenant_modifier=None, *constraints):
         # TODO consider preprocessed statements
-        self._table_name = table_name
-        self._table = self.ensure_table(schema)
+        self._table = table
         super().__init__(self._table, indexed=indexed, tenant_modifier=tenant_modifier, *constraints)
 
-    def get_existing_table(self):
-        pass
+
 
     def ensure_pydantic_table(self, schema):
         return table_from_pydantic(schema, Base, self._table_name)
@@ -114,9 +113,26 @@ class AlchemyDatabase(database.Database):
         self._engine = create_engine(self._connection_string)
         self._tables = self.get_tables()
 
+    def get_existing_table(self):
+        pass
+
     def get_connection_string(self, db_brand, dbcredentials):
         default = f'{db_brand}:///{self._db_name}'
         return default
+
+    def get_standard_collection(self, kind, tenant_modifier=None):
+        coll_name = database.uop_collection_names[kind]
+        schema = meta.kind_map[kind]
+        table = table_from_pydantic(schema, Base, coll_name)
+        return AlchemyCollection(table, tenant_modifier=tenant_modifier)
+
+    def get_instance_collection(self, cls):
+        coll_name = self.random_collection_name()
+        table = self.get_tables().get(coll_name)
+        if not table:
+            attrs = cls.attributes
+            table = table_from_attrs(attrs, Base, coll_name)
+        return AlchemyCollection(table)
 
     def get_tables(self):
         metadata = Base.metadata
